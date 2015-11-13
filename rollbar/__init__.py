@@ -174,7 +174,7 @@ except ImportError:
     TwistedHTTPClient = None
     inlineCallbacks = passthrough_decorator
     StringProducer = None
-    
+
 
 def get_request():
     """
@@ -1207,12 +1207,15 @@ def _get_api(path, access_token=None, endpoint=None, **params):
     return _parse_response(path, access_token, params, resp, endpoint=endpoint)
 
 
-def _send_payload_tornado(payload, access_token):
-    try:
-        _post_api_tornado('item/', payload, access_token=access_token)
-    except Exception as e:
-        log.exception('Exception while posting item %r', e)
-
+def _send_payload_tornado(payload):
+    future = _post_api_tornado(
+        'item/',
+        payload,
+        access_token=payload.get('access_token')
+    )
+    future.add_done_callback(
+        lambda f: log.exception('Exception while posting item to rollbar %r', f.exception())
+    )
 
 @tornado_coroutine
 def _post_api_tornado(path, payload, access_token=None):
